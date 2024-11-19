@@ -9,10 +9,22 @@ class Program
 {
     static void Main(string[] args)
     {
+        var scale = 10;
         // Загрузка изображения
-        string imagePath = "D:\\4\\3.jpg"; // Путь к изображению
-        Mat imgGray = CvInvoke.Imread(imagePath, ImreadModes.Grayscale); // Градации серого
-        Mat imgColor = CvInvoke.Imread(imagePath, ImreadModes.Color);    // Цветное изображение
+        string imagePath = "D:\\4\\5.jpg"; // Путь к изображению
+        Mat imgOriginal = CvInvoke.Imread(imagePath, ImreadModes.Color); // Оригинальное изображение
+
+        // Сохранение исходного размера
+        int originalWidth = imgOriginal.Width;
+        int originalHeight = imgOriginal.Height;
+
+        // Увеличение изображения в 10 раз
+        Mat imgScaledUp = new Mat();
+        CvInvoke.Resize(imgOriginal, imgScaledUp, new Size(originalWidth * scale, originalHeight * scale), 0, 0, Inter.Linear);
+
+        // Конвертация в градации серого
+        Mat imgGray = new Mat();
+        CvInvoke.CvtColor(imgScaledUp, imgGray, ColorConversion.Bgr2Gray);
 
         // Применение адаптивной пороговой обработки
         Mat binaryImage = new Mat();
@@ -29,7 +41,7 @@ class Program
             Mat hierarchy = new Mat();
             CvInvoke.FindContours(edgesImage, contours, hierarchy, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-            // Рисование контуров на цветном изображении
+            // Рисование контуров на увеличенном изображении
             for (int i = 0; i < contours.Size; i++)
             {
                 // Фильтрация слишком маленьких контуров (например, линии или шумы)
@@ -38,15 +50,19 @@ class Program
                 {
                     // Рисование контура
                     CvInvoke.DrawContours(
-                        imgColor, contours, i, new MCvScalar(0, 255, 0), 2); // Зелёный цвет, толщина 2 пикселя
+                        imgScaledUp, contours, i, new MCvScalar(0, 255, 0), 2); // Зелёный цвет, толщина 2 пикселя
                 }
             }
 
-            // Сохранение результата
-            string resultPath = "D:\\4\\result_image_with_contours.jpg";
-            CvInvoke.Imwrite(resultPath, imgColor); // Сохраняем результат в цвете
+            // Уменьшение изображения обратно к исходному размеру
+            Mat imgScaledDown = new Mat();
+            CvInvoke.Resize(imgScaledUp, imgScaledDown, new Size(originalWidth, originalHeight), 0, 0, Inter.Area);
 
-            Console.WriteLine($"Контуры успешно нарисованы и сохранены в '{resultPath}'");
+            // Сохранение результата
+            string resultPath = "D:\\4\\result_image_with_resized_contours.jpg";
+            CvInvoke.Imwrite(resultPath, imgScaledDown); // Сохраняем результат
+
+            Console.WriteLine($"Контуры успешно обработаны, масштабированы и сохранены в '{resultPath}'");
         }
     }
 }
